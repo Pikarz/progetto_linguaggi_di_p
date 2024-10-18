@@ -1,7 +1,7 @@
 # Simulazione di un Mini-Linguaggio con Puntatori e Bucket
 **Introduzione**
 
-Questo progetto simula un mini-linguaggio che gestisce la memoria tramite puntatori, utilizzando l'approccio dei bucket per ottimizzare la gestione. Una funzione hash viene impiegata per associare in modo univoco un nome a un determinato bucket. Gli elementi vengono inseriti in coda ai bucket man mano che vengono inizializzati. Il sistema definisce tre ambienti principali:
+Questo progetto per il corso Linguaggi di Programmazione A.A. 22/23 simula un mini-linguaggio che gestisce la memoria tramite puntatori, utilizzando l'approccio dei bucket per ottimizzare la gestione. Una funzione hash viene impiegata per associare in modo univoco un nome a un determinato bucket. Gli elementi vengono inseriti in coda ai bucket man mano che vengono inizializzati. Il sistema definisce tre ambienti principali:
 
     Ambiente dei Nomi (En):
     Una lista di liste della lunghezza di n, definita inizialmente dalla costante const_ncells. Le liste più interne, chiamate bucket, hanno lunghezza variabile in base al numero di elementi che sono stati inizializzati in quel momento e assegnati al bucket tramite la funzione hash. L'ambiente En contiene i nomi delle variabili inizializzate dall'utente, ciascuna delle quali ha un puntatore associato.
