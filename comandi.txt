@@ -1,0 +1,32 @@
+(* inizializzazione di variabili *)
+val (En, Ep, P, V) = initCompiler(3);
+val (En, Ep, P, V) = assign(En, Ep, P, V, "x", Str "linguaggi");
+val (En, Ep, P, V) = assign(En, Ep, P, V, "z", Str "da eliminare");
+val (En, Ep, P, V) = assign(En, Ep, P, V, "x", StrList(["algebre", "induttive"])); (* modifica del contenuto di una variabile già esistente *)
+val (En, Ep, P, V) = assign(En, Ep, P, V, "a", Bool true);
+val (En, Ep, P, V) = assign(En, Ep, P, V, "y", Int 7);
+
+(* valutazione *)
+valIt(En, Ep, V, "x");
+valIt(En, Ep, V, "y");
+
+(* utilizzo dei puntatori *)
+val pointer = refer(En, Ep, "q"); (* eccezione: la variabile non esiste *)
+val pointer = refer(En, Ep, "x");
+val (En, Ep, P, V) = changePointer(En, Ep, P, V, pointer, "y"); (* assegnamo a y lo stesso puntatore di x *)
+valIt(En, Ep, V, "x");
+valIt(En, Ep, V, "y"); (*ora y e x puntano alla stessa cosa*)
+val (En, Ep, P, V) = assign(En, Ep, P, V, "x", Int 42);
+valIt(En, Ep, V, "x");
+valIt(En, Ep, V, "y"); (* sono stati aggiornati entrambi i valori di x e y correttamente *)
+defer(V, pointer); (* valutazione di valore attraverso puntatore *)
+
+
+(* free e garbage collector *)
+val (En, Ep, P) = free(En, Ep, P, "z"); (* P ora ha un il vecchio puntatore in coda *)
+V; (* osserviamo che la lista di stringhe, vecchio contenuto di z, ancora è presente *) 
+val V = garbageCollector(Ep, V, []); (* dopo l'esecuzione del garbage collector il valore non referenziato da alcun puntatore è stato rimosso *)
+
+(* funzioni di tipo *)
+sumInt([Int 0,Int 10,Int 123]); (* restituisce intero *)
+concatString([Str "linguaggi", Str " di ", Str "programmazione"]); (* restituisce stringa *)

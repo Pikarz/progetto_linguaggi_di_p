@@ -1,0 +1,136 @@
+// quando eseguita la funzione che esegue effettivamente il compilatore, esso rimane in "loop" aspettando input dell'utente e si aspetta che l'utente assegna/chiama/etc valori. vorrei fare un implementazione del while, dell'if, etc
+// la free() deve _scalare_ tutto il bucket cosicché le nuove variabili vengano messe sempre alla fine e non sono presenti buchi nei buckets.
+// con assignPointer, che assegna un puntatore a un nome, potrebbe essere implementato un garbage collector
+
+fun concatWithComma(s) = String.concatWith "," s;
+fun concatWithNewline(s) = String.concatWith "\n" s;
+
+fun printMatrix(E) = 
+	concatWithNewline (map concatWithComma E);
+
+fun printNameEnv(En, Ep, P, V) = 
+	(printMatrix(En); ( En, Ep, P, V));
+
+
+
+fun remChar (c, s) =
+    let fun rem [] = []
+          | rem (c'::cs) =
+              if c = c'
+              then rem cs
+              else c'::rem cs
+    in implode (rem (explode s)) end
+
+
+fun remWhitespace(s) = remChar(#" ", s);
+
+fun wrapperFree(En, Ep, P, V, x) =
+	(free(En, Ep, P, x), V);
+
+fun wrapperValIt(En, Ep, P, V, x) = 
+	(print( (intVal(valIt(En,Ep, V, x)))^"\n" ); (En, Ep, P, V));
+
+exception BadTypeException
+fun getType(t) =
+		case t of
+			"Int" => Int |
+			"Str" => Str |
+			"Bool" => Bool |
+			_ => raise BadTypeException;
+
+exception BadFunctionException;
+fun getFun(f) =
+	case f of
+		"valIt" => wrapperValIt |
+		"free" => free |
+		"printNames" => printName
+		(* "*" => getPointer | switchare tra puntatore e variabile a seconda dell'input*)
+		(* "isRef" => isRef | *)
+		_ => raise BadFunctionException;
+
+
+fun analyzeToken(En, Ep, P, V, tok) =
+	let val t = (String.tokens (fn c => c = #"=") (List.nth(tok,0))) in
+		case (length t) of
+			2 =>( (* assignment *)
+				let val typename = (String.tokens (fn c => c = #" ") (List.nth(t,0))) in
+					print("assigning\n");
+					assign( En, Ep, P, V, 
+						( (remWhitespace(List.nth(typename, 1))) ), 
+						(getType( (remWhitespace(List.nth(typename, 0))) ) ( remWhitespace(List.nth(t,1)) )) )
+				end ) |
+			1 => (* function call *)
+				(let val f_p = (String.tokens (fn c => c = #"@") (List.nth(t,0))) in
+					(getFun( (remWhitespace(List.nth(f_p, 0))) )) (En, Ep, P, V, (remWhitespace(List.nth(f_p,1))))
+				end ) |
+			_ => 
+			    (print( intVal(valIt(En, Ep, V, (List.nth(t, 0)) ))); (En, Ep, P, V))
+	end;
+
+fun waitCommand(En, Ep, P, V) = 
+	let val cmd = valOf (TextIO.inputLine TextIO.stdIn) in
+		( 
+		let val tok = (String.tokens (fn c => c = #";") cmd) in
+			(waitCommand( (analyzeToken(En, Ep, P, V, tok) ))
+			handle
+				BadFunctionException => (print("Error: function does not exists\n"); waitCommand(En, Ep, P, V))  |
+				BadTypeException => (print("Error: invalid type\n"); waitCommand(En, Ep, P, V)) |
+				VariableDoesNotExistsException => (print("Error: variable is not assigned\n"); waitCommand(En, Ep, P, V)) |
+				MemoryFullException => (print("Error: memory is full!\n"); waitCommand(En, Ep, P, V))
+				)
+
+		end )
+	end;
+
+fun start(n) =
+	let val const_ncells = n in
+		(
+		let val (En, Ep, P, V) = initCompiler(const_ncells) in
+			waitCommand(En, Ep, P, V)
+		end)
+	end;
+
+
+
+esempi di assegnamento a linea di comando (quando è eseguito il garbage collector?)
+	Int x = 4;
+	Str s = "ciao";
+	Int y = 12;
+	Int xp = *x;
+	print( x+y );
+	*xp = 4;
+	print( x+y );
+	free(x);
+
+
+TODO: 
+	- Controllare le strutture option/SOME/NONE e aggiornare diverse funzioni con esse
+		val x = SOME 3;
+		isSome x; (val it = true)
+		esempio con fun:
+			fun myfun(SOME x) = x | myfun(NONE) = 3;
+			val y = 5;
+			myfun(SOME y) => val it = 5
+			myfun(NONE) => val it = 3
+	- cercare di usare i let senza passare continuamente environments e roba varia???
+
+val (En, Ep, P, V) = initCompiler(3);
+val (En, Ep, P, V) = assign(En, Ep, P, V, "x", Str("linguaggi"));
+val (En, Ep, P, V) = assign(En, Ep, P, V, "y", Int(7));
+val (En, Ep, P, V) = assign(En, Ep, P, V, "z", Str("di"));
+val (En, Ep, P, V) = assign(En, Ep, P, V, "a", IntList([42, 322]));
+val (En, Ep, P, V) = assign(En, Ep, P, V, "x", StrList(["programmazione", "anthony"]));
+valIt(En, Ep, V, "x");
+val (En, Ep, P) = free(En, Ep, P, "x");
+val V = garbageCollector(Ep, V, []);
+val (En, Ep, P, V) = assign(En, Ep, P, V, "x", Int(777));
+sumInt([Int 0,Int 10,Int 123]);
+concatString([Str "linguaggi", Str " di ", Str "programmazione"]);
+
+val (En, Ep, P, V) = assign(En, Ep, P, V, "x", StrList(["programmazione", "anthony"]));
+valIt(En, Ep, V, "x");
+val (En, Ep, P) = free(En, Ep, P, "x");
+val V = garbageCollector(Ep, V, []);
+val (En, Ep, P, V) = assign(En, Ep, P, V, "x", Int(777));
+sumInt([Int 0,Int 10,Int 123]);
+concatString([Str "linguaggi", Str " di ", Str "programmazione"]);
